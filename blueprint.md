@@ -70,23 +70,13 @@ To provide a minimalist, intuitive app where users can create, edit, and reorder
 
 ---
 
-## Tech Stack (Suggested)
-
-- **Frontend:** SwiftUI
-- **State Management:** SwiftData / Core Data (or Codable with local JSON storage for MVP)
-- **Local Persistence:** Core Data / Realm
-- **Optional Cloud Sync:** iCloud (later phase)
-- **Drag & Drop API:** SwiftUI `onMove()` modifier
-
----
-
 ## MVP Scope
 
-- [ ] Home screen with list of user-created ranked lists
-- [ ] Ability to create/edit/delete lists
-- [ ] Add/edit/delete items in a list
-- [ ] Drag-and-drop to reorder items
-- [ ] Basic local storage (no login, no cloud sync)
+- [x] Home screen with list of user-created ranked lists
+- [x] Ability to create/edit/delete lists
+- [x] Add/edit/delete items in a list
+- [x] Drag-and-drop to reorder items
+- [x] Basic local storage (no login, no cloud sync)
 - [ ] Clean, responsive SwiftUI interface
 
 ---
@@ -98,16 +88,3 @@ To provide a minimalist, intuitive app where users can create, edit, and reorder
 - [ ] Stats or analytics (e.g., most common tags)
 - [ ] Dark mode & customization
 - [ ] Public list templates (e.g., Top Albums of 2024)
-
----
-
-## License
-
-TBD (consider MIT or Apache 2.0)
-
----
-
-## Inspired By
-
-- Reddit user feedback from r/InternetIsBeautiful and r/SideProject
-- Personal need for ranked list tracking without clutter
