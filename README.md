@@ -2,7 +2,6 @@
 A project inspired by [reddit](https://www.reddit.com/r/apps/comments/nud976/looking_for_an_app_to_rank_all_sort_of_things/), whipped up in a couple of hours early on a Tuesday morning.
 
 ## RankBank in action
-![App Icon](https://github.com/user-attachments/assets/76500a32-c5fd-4ba1-8786-02cf0f79ce02)
 
 ![Demo](https://github.com/user-attachments/assets/cef5daf5-295e-4fc0-a802-df3b4c5ea701)
 
@@ -29,4 +28,6 @@ open RankBank.xcodeproj
 
 Inspired by [u/BLOODWORK17 on reddit](https://www.reddit.com/r/apps/comments/nud976/looking_for_an_app_to_rank_all_sort_of_things/)
 
-Built with love using Swift in Australia
+Built with love using Swift in Newcastle, Australia
+
+![App Icon](https://github.com/user-attachments/assets/76500a32-c5fd-4ba1-8786-02cf0f79ce02)
