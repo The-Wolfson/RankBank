@@ -6,13 +6,24 @@
 //
 
 import SwiftUI
+import SwiftData
 
 @main
 struct RankBankApp: App {
+    let container: ModelContainer
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .modelContainer(for: Item.self)
+            ContentView(modelContext: container.mainContext)
+        }
+        .modelContainer(container)
+    }
+
+    init() {
+        do {
+            container = try ModelContainer(for: Item.self)
+        } catch {
+            fatalError("\(error)")
         }
     }
 }

@@ -10,16 +10,15 @@ import SwiftData
 
 @Model
 class Item {
-    var name: String
+    var title: String
     var notes: String
     var rating: Int
 
     var folder: Folder?
 
-    init(name: String, notes: String, rating: Int, folder: Folder?) {
-        self.name = name
+    init(title: String, notes: String, rating: Int) {
+        self.title = title
         self.notes = notes
         self.rating = rating
-        self.folder = folder
     }
 }

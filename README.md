@@ -3,7 +3,6 @@ A project inspired by [reddit](https://www.reddit.com/r/apps/comments/nud976/loo
 
 ## RankBank in action
 
-![Demo](https://github.com/user-attachments/assets/cef5daf5-295e-4fc0-a802-df3b4c5ea701)
 
 
 ## Installation

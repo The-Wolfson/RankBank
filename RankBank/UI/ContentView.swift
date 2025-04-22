@@ -9,20 +9,25 @@ import SwiftData
 import SwiftUI
 
 struct ContentView: View {
-    @Environment(\.modelContext) var modelContext
-
+    @State private var viewModel: ViewModel
     var body: some View {
-        NavigationSplitView {
-            FoldersView()
-        } detail: {
-            ContentUnavailableView(
-                "Select a list to view its contents",
-                systemImage: "filemenu.and.selection"
-            )
+        NavigationStack {
+            FoldersView(modelContext: viewModel.modelContext)
         }
+    }
+    init(modelContext: ModelContext) {
+        let viewModel = ViewModel(modelContext: modelContext)
+        _viewModel = State(initialValue: viewModel)
     }
 }
 
-#Preview {
-    ContentView()
+extension ContentView {
+    @Observable
+    class ViewModel {
+        private(set) var modelContext: ModelContext
+
+        init(modelContext: ModelContext) {
+            self.modelContext = modelContext
+        }
+    }
 }

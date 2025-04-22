@@ -12,18 +12,14 @@ struct ItemRowView: View {
     var body: some View {
         HStack {
             Text(item.rating, format: .number)
-                .font(.title2)
+                .font(.title)
             VStack(alignment: .leading) {
-                Text(item.name)
-                Text(item.notes)
-                    .font(.caption)
+                Text(item.title)
+                if !item.notes.isEmpty {
+                    Text(item.notes)
+                        .font(.caption)
+                }
             }
         }
     }
-}
-
-#Preview {
-    ItemRowView(
-        item: Item(name: "Rick", notes: "Good fellow", rating: 1, folder: nil)
-    )
 }

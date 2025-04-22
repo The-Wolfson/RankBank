@@ -9,126 +9,198 @@ import SwiftData
 import SwiftUI
 
 struct ItemsView: View {
-    @Environment(\.modelContext) var modelContext
-    @Query(sort: \Item.rating) var items: [Item]
-    let folder: Folder
-    @State private var isShowingEditItem: Bool = false
-    @State private var editingItem: Item = Item(
-        name: "",
-        notes: "",
-        rating: 0,
-        folder: nil
-    )
-    init(folder: Folder) {
-        self.folder = folder
-        let id = folder.persistentModelID
-        let predicate = #Predicate<Item> { item in
-            item.folder?.persistentModelID == id
-        }
-        _items = Query(filter: predicate, sort: \.rating)
-    }
-    var body: some View {
-        Group {
-            if !items.isEmpty {
-                List {
-                    ForEach(items) { item in
-                        ItemRowView(item: item)
-                            .swipeActions {
-                                Button(
-                                    "Delete",
-                                    systemImage: "trash",
-                                    role: .destructive
-                                ) {
-                                    deleteItem(item: item)
-                                }
-                                Button("Edit", systemImage: "pencil") {
-                                    editingItem = item
-                                    isShowingEditItem.toggle()
-                                }
-                            }
-                            .contextMenu {
-                                Button("Edit", systemImage: "pencil") {
-                                    editingItem = item
-                                    isShowingEditItem.toggle()
-                                }
-                                Divider()
-                                Button(
-                                    "Delete",
-                                    systemImage: "trash",
-                                    role: .destructive
-                                ) {
-                                    deleteItem(item: item)
-                                }
-                            }
-                    }
-                    .onMove { source, destination in
-                        var tempItems = items
-                        tempItems.move(
-                            fromOffsets: source,
-                            toOffset: destination
-                        )
+    @State private var viewModel: ViewModel
 
-                        for (index, tempItem) in tempItems.enumerated() {
-                            if let item = items.first(where: {
-                                $0.id == tempItem.id
-                            }) {
-                                item.rating = index + 1
-                            }
+    var body: some View {
+        ForEach(viewModel.items) { item in
+            ItemRowView(item: item)
+                .contextMenu {
+                    Button("Edit", systemImage: "pencil") {
+                        viewModel.editingItem = item
+                    }
+                    Divider()
+                    Button("Delete", systemImage: "trash", role: .destructive) {
+                        viewModel.deleteItem(item)
+                    }
+                }
+        }
+        .onMove(perform: viewModel.moveItem)
+        ForEach(viewModel.folders) { folder in
+            DisclosureGroup {
+                ItemsView(
+                    modelContext: viewModel.modelContext,
+                    parentFolder: folder
+                )
+            } label: {
+                FolderRowView(folder: folder)
+                    .contextMenu {
+                        Button("Edit", systemImage: "pencil") {
+                            viewModel.editingFolder = folder
+                        }
+                        Divider()
+                        Button(
+                            "Delete",
+                            systemImage: "trash",
+                            role: .destructive
+                        ) {
+                            viewModel.deleteFolder(folder)
                         }
                     }
-                }
-            } else {
-                ContentUnavailableView(
-                    "No Items in this list",
-                    systemImage: "clipboard"
-                )
             }
         }
-        .navigationTitle(folder.title)
-        .toolbar {
-            Button("Add Item", systemImage: "plus") {
-                editingItem = Item(
-                    name: "",
-                    notes: "",
-                    rating: 0,
-                    folder: folder
-                )
-                isShowingEditItem.toggle()
+        Menu("Add") {
+            Button("Add List") {
+                viewModel.isShowingAddFolder.toggle()
+            }
+            Button("Add Item") {
+                viewModel.isShowingAddItem.toggle()
             }
         }
-        .alert("Edit Item", isPresented: $isShowingEditItem) {
-            TextField("Name", text: $editingItem.name)
-            TextField("Description", text: $editingItem.notes)
-            Button("Save") {
-                withAnimation {
-                    modelContext.insert(editingItem)
-                    saveModelContext()
-                    for (index, item) in items.enumerated() {
-                        item.rating = index + 1
-                    }
-                }
+        .sheet(isPresented: $viewModel.isShowingAddItem) {
+            DispatchQueue.main.async {
+                viewModel.fetchData()
             }
-            .disabled(editingItem.name.isEmpty)
+        } content: {
+            EditItemView(
+                modelContext: viewModel.modelContext,
+                parentFolder: viewModel.parentFolder
+            )
+            .presentationDetents([.medium])
+        }
+        .sheet(item: $viewModel.editingItem) {
+            DispatchQueue.main.async {
+                viewModel.fetchData()
+            }
+        } content: { item in
+            EditItemView(
+                modelContext: viewModel.modelContext,
+                parentFolder: item.folder!,
+                editingItem: item
+            )
+            .presentationDetents([.medium])
+            .interactiveDismissDisabled()
+        }
+
+        .sheet(isPresented: $viewModel.isShowingAddFolder) {
+            DispatchQueue.main.async {
+                viewModel.fetchData()
+            }
+        } content: {
+            AddFolderView(
+                modelContext: viewModel.modelContext,
+                parentFolder: viewModel.parentFolder
+            )
+            .presentationDetents([.medium])
+        }
+        .sheet(item: $viewModel.editingFolder) {
+            DispatchQueue.main.async {
+                viewModel.fetchData()
+            }
+        } content: { folder in
+            AddFolderView(
+                modelContext: viewModel.modelContext,
+                editingFolder: folder
+            )
+            .presentationDetents([.medium])
+            .interactiveDismissDisabled()
         }
     }
-    func saveModelContext() {
-        do {
-            try modelContext.save()
-        } catch {
-            print("Failed to save: \(error)")
-        }
-    }
-    func deleteItem(item: Item) {
-        withAnimation {
-            modelContext.delete(item)
-            saveModelContext()
-            for (index, item) in items.enumerated() {
-                item.rating = index + 1
-            }
-        }
+    init(modelContext: ModelContext, parentFolder: Folder) {
+        let viewModel = ViewModel(
+            modelContext: modelContext,
+            parentFolder: parentFolder
+        )
+        _viewModel = State(initialValue: viewModel)
     }
 }
 
-#Preview {
-    ItemsView(folder: Folder(title: "Name"))
+extension ItemsView {
+    @Observable
+    class ViewModel {
+        private(set) var modelContext: ModelContext
+        private(set) var parentFolder: Folder
+        var isShowingAddFolder: Bool = false
+        var isShowingAddItem: Bool = false
+        var editingFolder: Folder?
+        var editingItem: Item?
+        var items = [Item]()
+        var folders = [Folder]()
+
+        init(modelContext: ModelContext, parentFolder: Folder) {
+            self.modelContext = modelContext
+            self.parentFolder = parentFolder
+
+            fetchData()
+        }
+
+        func moveItem(from source: IndexSet, to destination: Int) {
+            items.move(
+                fromOffsets: source,
+                toOffset: destination
+            )
+
+            for (index, item) in items.enumerated() {
+                item.rating = index + 1
+            }
+
+            do {
+                try modelContext.save()
+            } catch {
+                print(error)
+            }
+        }
+
+        func deleteFolder(_ folder: Folder) {
+            modelContext.delete(folder)
+
+            do {
+                try modelContext.save()
+            } catch {
+                print(error)
+            }
+
+            fetchData()
+        }
+
+        func deleteItem(_ item: Item) {
+            modelContext.delete(item)
+
+            do {
+                try modelContext.save()
+            } catch {
+                print(error)
+            }
+
+            fetchData()
+        }
+
+        func fetchData() {
+            withAnimation {
+                let parentFolderId = parentFolder.id
+                let folderDescriptor = FetchDescriptor<Folder>(
+                    predicate: #Predicate<Folder> { folder in
+                        folder.parentFolder?.id == parentFolderId
+                    },
+                    sortBy: [SortDescriptor(\.title)]
+                )
+
+                let itemDescriptor = FetchDescriptor<Item>(
+                    predicate: #Predicate<Item> { item in
+                        item.folder?.id == parentFolderId
+                    },
+                    sortBy: [SortDescriptor(\.rating)]
+                )
+                do {
+                    items = try modelContext.fetch(itemDescriptor)
+                    folders = try modelContext.fetch(folderDescriptor)
+                } catch {
+                    print(error)
+                }
+
+                for (index, item) in items.enumerated() {
+                    item.rating = index + 1
+                }
+            }
+        }
+    }
 }

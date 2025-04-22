@@ -1,5 +1,5 @@
 //
-//  FoldersView.swift
+//  FormsView.swift
 //  RankBank
 //
 //  Created by Joshua Wolfson on 22/4/2025.
@@ -9,96 +9,109 @@ import SwiftData
 import SwiftUI
 
 struct FoldersView: View {
-    @Environment(\.modelContext) var modelContext
-    @Query var folders: [Folder]
-    @State private var isShowingAddFolder: Bool = false
-    @State private var newFolder: Folder = Folder(title: "")
+    @State private var viewModel: ViewModel
+
     var body: some View {
-        Group {
-            if folders.isEmpty {
-                ContentUnavailableView(
-                    "No Lists",
-                    systemImage: "folder",
-                    description: Text("Add a List to get started")
-                )
-            } else {
-                List(folders) { folder in
-                    NavigationLink(value: folder) {
-                        Text(folder.title)
-                    }
-                    .swipeActions {
-                        Button(
-                            "Delete",
-                            systemImage: "trash",
-                            role: .destructive
-                        ) {
-                            deleteFolder(folder: folder)
-                        }
-                        Button("Edit", systemImage: "pencil") {
-                            newFolder = folder
-                            isShowingAddFolder.toggle()
-                        }
-                    }
-                    .contextMenu {
-                        Button("Edit", systemImage: "pencil") {
-                            newFolder = folder
-                            isShowingAddFolder.toggle()
-                        }
-                        Divider()
-                        Button(
-                            "Delete",
-                            systemImage: "trash",
-                            role: .destructive
-                        ) {
-                            deleteFolder(folder: folder)
-                        }
-                    }
-                }
-                .navigationDestination(for: Folder.self) { folder in
-                    ItemsView(folder: folder)
-                }
-            }
+       Group {
+           if viewModel.folders.isEmpty {
+               ContentUnavailableView {
+                   Label("No Lists", systemImage: "list.bullet.rectangle.portrait")
+               } actions: {
+                   Button("Add List") {
+                       viewModel.isShowingAddSheet.toggle()
+                   }
+               }
+
+           } else {
+               List(viewModel.folders) { folder in
+                   NavigationLink(value: folder) {
+                       FolderRowView(folder: folder)
+                   }
+                   .contextMenu {
+                       Button("Edit", systemImage: "pencil") {
+                           viewModel.editingFolder = folder
+                       }
+                       Divider()
+                       Button("Delete", systemImage: "trash", role: .destructive) {
+                           viewModel.delete(folder: folder)
+                       }
+                   }
+               }
+               .navigationDestination(for: Folder.self) { folder in
+                   FolderDetailView(
+                    modelContext: viewModel.modelContext,
+                    parentFolder: folder
+                   )
+               }
+           }
         }
         .navigationTitle("Lists")
         .toolbar {
             Button("Add List", systemImage: "plus") {
-                isShowingAddFolder.toggle()
+                viewModel.isShowingAddSheet.toggle()
             }
         }
-        .alert("New List", isPresented: $isShowingAddFolder) {
-            TextField("Title", text: $newFolder.title)
-            Button("Cancel", role: .cancel) {
-                newFolder = Folder(title: "")
-            }
-            Button("Save") {
-                addFolder()
-            }
-            .disabled(newFolder.title.isEmpty)
+        .sheet(isPresented: $viewModel.isShowingAddSheet) {
+            viewModel.fetchData()
+        } content: {
+            AddFolderView(modelContext: viewModel.modelContext)
+                .presentationDetents([.medium])
+        }
+        .sheet(item: $viewModel.editingFolder) {
+            viewModel.fetchData()
+        } content: { folder in
+            AddFolderView(
+                modelContext: viewModel.modelContext,
+                editingFolder: folder
+            )
+            .presentationDetents([.medium])
+            .interactiveDismissDisabled()
         }
     }
-
-    func deleteFolder(folder: Folder) {
-        withAnimation {
-            modelContext.delete(folder)
-            saveModelContext()
-        }
-    }
-
-    func addFolder() {
-        modelContext.insert(newFolder)
-        saveModelContext()
-        newFolder = Folder(title: "")
-    }
-
-    func saveModelContext() {
-        do {
-            try modelContext.save()
-        } catch {
-            print("Failed to save: \(error)")
-        }
+    init(modelContext: ModelContext) {
+        let viewModel = ViewModel(modelContext: modelContext)
+        _viewModel = State(initialValue: viewModel)
     }
 }
 
-#Preview {
-    FoldersView()
+extension FoldersView {
+    @Observable
+    class ViewModel {
+        private(set) var modelContext: ModelContext
+        private(set) var folders: [Folder] = []
+        var isShowingAddSheet: Bool = false
+        var editingFolder: Folder?
+
+        init(modelContext: ModelContext) {
+            self.modelContext = modelContext
+            fetchData()
+        }
+
+        func delete(folder: Folder) {
+            modelContext.delete(folder)
+
+            do {
+                try modelContext.save()
+            } catch {
+                print(error)
+            }
+            fetchData()
+        }
+
+        func fetchData() {
+            withAnimation {
+                do {
+                    let descriptor = FetchDescriptor<Folder>(
+                        predicate: #Predicate<Folder> { folder in
+                            folder.parentFolder == nil
+                        },
+                        sortBy: [SortDescriptor(\.title)]
+                    )
+                    folders = try modelContext.fetch(descriptor)
+                } catch {
+                    print(error)
+                }
+            }
+        }
+    }
 }
