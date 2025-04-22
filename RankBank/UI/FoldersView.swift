@@ -26,8 +26,21 @@ struct FoldersView: View {
                     NavigationLink(value: folder) {
                         Text(folder.title)
                     }
+                    .swipeActions {
+                        Button(
+                            "Delete",
+                            systemImage: "trash",
+                            role: .destructive
+                        ) {
+                            deleteFolder(folder: folder)
+                        }
+                        Button("Edit", systemImage: "pencil") {
+                            newFolder = folder
+                            isShowingAddFolder.toggle()
+                        }
+                    }
                     .contextMenu {
-                        Button("Edit") {
+                        Button("Edit", systemImage: "pencil") {
                             newFolder = folder
                             isShowingAddFolder.toggle()
                         }
