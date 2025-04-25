@@ -12,19 +12,6 @@ struct ItemsView: View {
     @State private var viewModel: ViewModel
 
     var body: some View {
-        ForEach(viewModel.items) { item in
-            ItemRowView(item: item)
-                .contextMenu {
-                    Button("Edit", systemImage: "pencil") {
-                        viewModel.editingItem = item
-                    }
-                    Divider()
-                    Button("Delete", systemImage: "trash", role: .destructive) {
-                        viewModel.deleteItem(item)
-                    }
-                }
-        }
-        .onMove(perform: viewModel.moveItem)
         ForEach(viewModel.folders) { folder in
             DisclosureGroup {
                 ItemsView(
@@ -48,37 +35,11 @@ struct ItemsView: View {
                     }
             }
         }
-        Menu("Add") {
-            Button("Add List") {
-                viewModel.isShowingAddFolder.toggle()
-            }
-            Button("Add Item") {
-                viewModel.isShowingAddItem.toggle()
-            }
+        .onMove {
+            viewModel.moveFolder(from: $0, to: $1)
         }
-        .sheet(isPresented: $viewModel.isShowingAddItem) {
-            DispatchQueue.main.async {
-                viewModel.fetchData()
-            }
-        } content: {
-            EditItemView(
-                modelContext: viewModel.modelContext,
-                parentFolder: viewModel.parentFolder
-            )
-            .presentationDetents([.medium])
-        }
-        .sheet(item: $viewModel.editingItem) {
-            DispatchQueue.main.async {
-                viewModel.fetchData()
-            }
-        } content: { item in
-            EditItemView(
-                modelContext: viewModel.modelContext,
-                parentFolder: item.folder!,
-                editingItem: item
-            )
-            .presentationDetents([.medium])
-            .interactiveDismissDisabled()
+        Button("Add Item") {
+            viewModel.isShowingAddFolder.toggle()
         }
 
         .sheet(isPresented: $viewModel.isShowingAddFolder) {
@@ -120,10 +81,7 @@ extension ItemsView {
         private(set) var modelContext: ModelContext
         private(set) var parentFolder: Folder
         var isShowingAddFolder: Bool = false
-        var isShowingAddItem: Bool = false
         var editingFolder: Folder?
-        var editingItem: Item?
-        var items = [Item]()
         var folders = [Folder]()
 
         init(modelContext: ModelContext, parentFolder: Folder) {
@@ -133,25 +91,15 @@ extension ItemsView {
             fetchData()
         }
 
-        func moveItem(from source: IndexSet, to destination: Int) {
-            items.move(
+        func moveFolder(from source: IndexSet, to destination: Int) {
+            folders.move(
                 fromOffsets: source,
                 toOffset: destination
             )
 
-            for (index, item) in items.enumerated() {
-                item.rating = index + 1
+            for (index, folder) in folders.enumerated() {
+                folder.rating = index + 1
             }
-
-            do {
-                try modelContext.save()
-            } catch {
-                print(error)
-            }
-        }
-
-        func deleteFolder(_ folder: Folder) {
-            modelContext.delete(folder)
 
             do {
                 try modelContext.save()
@@ -162,8 +110,8 @@ extension ItemsView {
             fetchData()
         }
 
-        func deleteItem(_ item: Item) {
-            modelContext.delete(item)
+        func deleteFolder(_ folder: Folder) {
+            modelContext.delete(folder)
 
             do {
                 try modelContext.save()
@@ -181,24 +129,16 @@ extension ItemsView {
                     predicate: #Predicate<Folder> { folder in
                         folder.parentFolder?.id == parentFolderId
                     },
-                    sortBy: [SortDescriptor(\.title)]
-                )
-
-                let itemDescriptor = FetchDescriptor<Item>(
-                    predicate: #Predicate<Item> { item in
-                        item.folder?.id == parentFolderId
-                    },
                     sortBy: [SortDescriptor(\.rating)]
                 )
                 do {
-                    items = try modelContext.fetch(itemDescriptor)
                     folders = try modelContext.fetch(folderDescriptor)
                 } catch {
                     print(error)
                 }
 
-                for (index, item) in items.enumerated() {
-                    item.rating = index + 1
+                for (index, folder) in folders.enumerated() {
+                    folder.rating = index + 1
                 }
             }
         }

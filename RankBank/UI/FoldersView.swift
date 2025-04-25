@@ -25,7 +25,14 @@ struct FoldersView: View {
            } else {
                List(viewModel.folders) { folder in
                    NavigationLink(value: folder) {
-                       FolderRowView(folder: folder)
+                       VStack(alignment: .leading) {
+                           Text(folder.title)
+                               .bold()
+                           if !folder.notes.isEmpty {
+                               Text(folder.notes)
+                                   .font(.caption)
+                           }
+                       }
                    }
                    .contextMenu {
                        Button("Edit", systemImage: "pencil") {

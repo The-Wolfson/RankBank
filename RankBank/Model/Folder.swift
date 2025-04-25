@@ -12,17 +12,16 @@ import SwiftData
 class Folder {
     var title: String
     var notes: String
+    var rating: Int
     var parentFolder: Folder?
     
     @Relationship(deleteRule: .cascade, inverse: \Folder.parentFolder)
     var folders: [Folder] = []
     
-    @Relationship(deleteRule: .cascade, inverse: \Item.folder)
-    var items: [Item] = []
-    
-    init(title: String, notes: String, parentFolder: Folder? = nil) {
+    init(title: String, notes: String, rating: Int = 0, parentFolder: Folder? = nil) {
         self.title = title
         self.notes = notes
+        self.rating = rating
         self.parentFolder = parentFolder
     }
 }

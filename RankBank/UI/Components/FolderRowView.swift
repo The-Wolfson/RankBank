@@ -10,12 +10,16 @@ import SwiftUI
 struct FolderRowView: View {
     let folder: Folder
     var body: some View {
-        VStack(alignment: .leading) {
-            Text(folder.title)
-                .bold()
-            if !folder.notes.isEmpty {
-                Text(folder.notes)
-                    .font(.caption)
+        HStack {
+            Text(folder.rating, format: .number)
+                .font(.title)
+            VStack(alignment: .leading) {
+                Text(folder.title)
+                    .bold()
+                if !folder.notes.isEmpty {
+                    Text(folder.notes)
+                        .font(.caption)
+                }
             }
         }
     }

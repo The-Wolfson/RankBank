@@ -21,7 +21,7 @@ struct RankBankApp: App {
 
     init() {
         do {
-            container = try ModelContainer(for: Item.self)
+            container = try ModelContainer(for: Folder.self)
         } catch {
             fatalError("\(error)")
         }
