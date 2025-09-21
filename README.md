@@ -8,17 +8,15 @@ A project inspired by [reddit](https://www.reddit.com/r/apps/comments/nud976/loo
 ## Installation
 
 1. Clone the repository:
-```bash
+``` bash
 git clone https://github.com/The-Wolfson/RankBank.git
 ```
 2. Navigate to the project directory:
-```
-bash
+``` bash
 cd RankBank
 ```
 3. Open the project in Xcode:
-```
-bash
+``` bash
 open RankBank.xcodeproj
 ```
 4. Build and run the project in the simulator or on a device.
